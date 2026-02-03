@@ -1,0 +1,17 @@
+id: yellow_size
+namespace: size
+
+tasks:
+  - id: download_file
+    type: io.kestra.plugin.core.http.Download
+    uri:  https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-12.csv.gz
+  
+  - id: extract_file
+    type: io.kestra.plugin.compress.FileDecompress
+    from: "{{ outputs.download_file.uri }}"
+    compression: GZIP
+
+  - id: file_size
+    type: io.kestra.plugin.core.storage.Size
+    uri: "{{ outputs.extract_file.uri }}"
+

@@ -1,0 +1,28 @@
+id: inspect_schema
+namespace: schema
+
+tasks:
+  - id: download_file
+    type: io.kestra.plugin.core.http.Download
+    uri: "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-01.csv.gz"
+
+  - id: extract_file
+    type: io.kestra.plugin.compress.FileDecompress
+    from: "{{ outputs.download_file.uri }}"
+    compression: GZIP
+
+  - id: get_schema
+    type: io.kestra.plugin.jdbc.duckdb.Queries
+    inputFiles:
+      data.csv: "{{ outputs.extract_file.uri }}"
+    sql: |
+      CREATE TEMPORARY TABLE schema_info AS SELECT * FROM read_csv_auto('data.csv') LIMIT 0;
+
+      SELECT sql FROM duckdb_tables WHERE table_name == 'schema_info';
+    fetchType: FETCH
+  
+  - id: purge_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: This will remove output files.
+
+
